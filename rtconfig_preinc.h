@@ -13,5 +13,7 @@
 #define __RTTHREAD__
 #define __RT_KERNEL_SOURCE__
 #define __RT_IPC_SOURCE__
+#define UDISP_ENABLE_DMA2D
+#define UDISP_ENABLE_JPEG
 
 #endif /*RTCONFIG_PREINC_H__*/

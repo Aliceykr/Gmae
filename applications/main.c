@@ -22,7 +22,11 @@ int main(void)
 
     rt_pin_mode(LED_PIN, PIN_MODE_OUTPUT);
 
-    /* 启动 USB 显示桥 (Phase 1: 仅帧缓冲). 失败不影响 main 流程 */
+    /* 启动 USB 显示桥. 通过编译宏分段启用子系统, 排查 WHD 冲突:
+     *   (无)                      只启用 FB (Phase 1 同款, 已验证)
+     *   UDISP_ENABLE_DMA2D        加上 DMA2D
+     *   UDISP_ENABLE_JPEG         加上 JPEG
+     */
     if (udisp_init() != 0)
     {
         rt_kprintf("[main] udisp_init failed, continue without display bridge\n");

@@ -5,6 +5,7 @@
  */
 #include "user_display.h"
 #include "user_display_fb.h"
+#include "user_display_dma2d.h"
 #include "user_display_jpeg.h"
 #include "user_display_usb.h"
 
@@ -24,7 +25,7 @@ int udisp_init(void)
         return UDISP_OK;
     }
 
-    LOG_I("Initializing USB Display Bridge (Phase 1: FB only)");
+    LOG_I("Initializing USB Display Bridge (Phase 2: FB + DMA2D + JPEG)");
 
     rc = udisp_fb_init();
     if (rc != UDISP_OK)
@@ -33,12 +34,34 @@ int udisp_init(void)
         return rc;
     }
 
-    /* Phase 2 / Phase 3 的 stub, 返回 NOT_INIT 不算错 */
-    (void)udisp_jpeg_init();
+#ifdef UDISP_ENABLE_DMA2D
+    /* DMA2D 硬件加速, 失败不致命 (会 fallback 到 CPU) */
+    rc = udisp_dma2d_init();
+    if (rc != UDISP_OK)
+    {
+        LOG_W("dma2d_init failed: %d (will fallback to CPU fill)", rc);
+    }
+    LOG_I("DMA2D phase enabled");
+#else
+    LOG_W("DMA2D init skipped (UDISP_ENABLE_DMA2D not defined)");
+#endif
+
+#ifdef UDISP_ENABLE_JPEG
+    /* JPEG 编码器, 失败不致命 (只影响 Phase 2/3 的 jpeg 命令) */
+    rc = udisp_jpeg_init();
+    if (rc != UDISP_OK)
+    {
+        LOG_W("jpeg_init failed: %d (JPEG encoding disabled)", rc);
+    }
+#else
+    LOG_W("JPEG init skipped (UDISP_ENABLE_JPEG not defined)");
+#endif
+
+    /* Phase 3 stub */
     (void)udisp_usb_init();
 
     s_ready = RT_TRUE;
-    LOG_I("init OK (Phase 1)");
+    LOG_I("init OK");
     return UDISP_OK;
 }
 

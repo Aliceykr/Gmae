@@ -5,6 +5,17 @@ cwd = GetCurrentDir()
 
 src = Glob('src/*.c')
 
+# Phase 2 依赖 HAL_JPEG 和 HAL_DMA2D,
+# 它们默认不在 STM32H7 HAL SConscript 的编译列表中 (只有 BSP_USING_LCD 才会带),
+# 我们这里显式加入, 让 user 模块自带这些依赖.
+hal_extra = [
+    '../libraries/STM32H7RSxx_HAL_Driver/Src/stm32h7rsxx_hal_jpeg.c',
+    '../libraries/STM32H7RSxx_HAL_Driver/Src/stm32h7rsxx_hal_dma2d.c',
+]
+for f in hal_extra:
+    if os.path.isfile(os.path.join(cwd, f)):
+        src.append(File(f))
+
 CPPPATH = [
     cwd,
     cwd + '/inc',

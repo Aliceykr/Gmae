@@ -135,6 +135,15 @@ void udisp_fb_clear(udisp_fb_t *fb, uint16_t color)
 {
     if (fb == RT_NULL || fb->pixels == RT_NULL) return;
 
+    /* 如果 DMA2D 可用, 走硬件加速; 否则回退到 CPU 路径 */
+    extern int udisp_dma2d_is_ready(void);
+    extern int udisp_dma2d_clear(udisp_fb_t *fb, uint16_t color_rgb565);
+    if (udisp_dma2d_is_ready())
+    {
+        if (udisp_dma2d_clear(fb, color) == UDISP_OK) return;
+        /* 失败则 fallthrough 到 CPU 路径 */
+    }
+
     uint32_t total = fb->width * fb->height;
     uint16_t *p = fb->pixels;
 

@@ -19,9 +19,11 @@ extern "C" {
 
 #define UDISP_PSRAM_BASE        (0x90000000UL)
 
-#define UDISP_FB0_ADDR          (UDISP_PSRAM_BASE + 0x00000000UL)   /* 0x90000000 */
-#define UDISP_FB1_ADDR          (UDISP_PSRAM_BASE + 0x00100000UL)   /* 0x90100000, +1MB */
-#define UDISP_JPEG_OUT_ADDR     (UDISP_PSRAM_BASE + 0x00200000UL)   /* 0x90200000, +2MB */
+#define UDISP_FB0_ADDR          (UDISP_PSRAM_BASE + 0x00000000UL)   /* 0x90000000, FB0 */
+#define UDISP_FB1_ADDR          (UDISP_PSRAM_BASE + 0x00100000UL)   /* 0x90100000, FB1 */
+#define UDISP_MCU_IN_ADDR       (UDISP_PSRAM_BASE + 0x00200000UL)   /* 0x90200000, JPEG MCU input (YCbCr 4:2:0) */
+#define UDISP_MCU_IN_SIZE       (1024 * 1024)                       /*   实用 576KB, 预留 1MB */
+#define UDISP_JPEG_OUT_ADDR     (UDISP_PSRAM_BASE + 0x00300000UL)   /* 0x90300000, JPEG output */
 #define UDISP_JPEG_OUT_SIZE     (256 * 1024)                        /* 256 KB */
 
 /* ----------------------------- 帧缓冲结构 ----------------------------- */

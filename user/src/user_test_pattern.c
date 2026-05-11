@@ -8,6 +8,7 @@
  * Copyright (c) 2025
  */
 #include "user_test_pattern.h"
+#include "user_display_dma2d.h"
 #include <rtthread.h>
 #include <string.h>
 
@@ -25,6 +26,12 @@ static inline void put_pixel(udisp_fb_t *fb, int x, int y, uint16_t c)
 
 static void fill_rect(udisp_fb_t *fb, int x0, int y0, int w, int h, uint16_t c)
 {
+    /* 优先 DMA2D */
+    if (udisp_dma2d_is_ready())
+    {
+        if (udisp_dma2d_fill_rect(fb, x0, y0, w, h, c) == UDISP_OK) return;
+    }
+
     int x1 = x0 + w, y1 = y0 + h;
     if (x0 < 0) x0 = 0;
     if (y0 < 0) y0 = 0;
