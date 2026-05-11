@@ -91,6 +91,11 @@ static int cmd_udisp_stat(int argc, char **argv)
     rt_kprintf("  resolution    : %d x %d RGB565 (%u KB/frame)\n",
                UDISP_WIDTH, UDISP_HEIGHT, UDISP_FB_SIZE / 1024);
 
+    {
+        extern uint32_t SystemCoreClock;
+        rt_kprintf("  sys clock     : %u Hz (%u MHz)\n", SystemCoreClock, SystemCoreClock / 1000000);
+    }
+
     udisp_fb_t *fb_b = udisp_fb_get_back();
     udisp_fb_t *fb_f = udisp_fb_get_front();
     if (fb_b && fb_f)
@@ -106,8 +111,8 @@ static int cmd_udisp_stat(int argc, char **argv)
     rt_kprintf("  jpeg frames   : %u\n", js.total_frames);
     if (js.total_frames)
     {
-        rt_kprintf("  jpeg last     : convert=%u us, encode=%u us, bytes=%u\n",
-                   js.last_convert_us, js.last_encode_us, js.last_jpeg_bytes);
+        rt_kprintf("  jpeg last     : tick=%u ms, bytes=%u, stripes=%u\n",
+                   js.last_tick_ms, js.last_jpeg_bytes, js.last_stripe_cnt);
     }
 
     rt_kprintf("  render frames : %u\n", s_frame_idx);
@@ -216,7 +221,6 @@ static int cmd_udisp_jpeg_test(int argc, char **argv)
     udisp_fb_swap();
     uint32_t t_render = tick_ms() - t0;
 
-    /* swap 后, 刚画的那一帧已经是 front buffer */
     fb = udisp_fb_get_front();
     uint8_t *out = udisp_jpeg_get_output_buffer();
     uint32_t cap = udisp_jpeg_get_output_capacity();
@@ -238,8 +242,7 @@ static int cmd_udisp_jpeg_test(int argc, char **argv)
     uint32_t t_total = t_render + t_jpeg;
     rt_kprintf("pattern=%d\n", pat);
     rt_kprintf("  render        : %u ms\n", t_render);
-    rt_kprintf("  jpeg total    : %u ms (convert=%u us, encode=%u us)\n",
-               t_jpeg, js.last_convert_us, js.last_encode_us);
+    rt_kprintf("  jpeg (tick)   : %u ms  (stripes=%u)\n", t_jpeg, js.last_stripe_cnt);
     rt_kprintf("  jpeg size     : %u bytes (%u:1 compression)\n",
                len, len ? (UDISP_FB_SIZE / len) : 0);
     rt_kprintf("  pipeline      : %u ms/frame, ~%u fps max\n",
@@ -262,17 +265,27 @@ static int cmd_udisp_jpeg_bench(int argc, char **argv)
     if (n < 1) n = 1;
     if (n > 100) n = 100;
 
+    /* 可选: 第2个参数指定图案, 默认 gradient */
+    udisp_pattern_t pat = UDISP_PATTERN_GRADIENT;
+    if (argc >= 3)
+    {
+        int v = atoi(argv[2]);
+        if (v >= 0 && v < UDISP_PATTERN_MAX) pat = (udisp_pattern_t)v;
+    }
+
     udisp_fb_t *fb = udisp_fb_get_back();
-    /* 先画一次渐变, 后面只编码不重画 */
-    udisp_draw_test_pattern(fb, UDISP_PATTERN_GRADIENT, 0);
+    /* 先画一次, 后面只编码不重画 */
+    udisp_draw_test_pattern(fb, pat, 0);
     udisp_fb_swap();
     fb = udisp_fb_get_front();
 
     uint8_t *out = udisp_jpeg_get_output_buffer();
     uint32_t cap = udisp_jpeg_get_output_capacity();
 
-    rt_kprintf("JPEG benchmark: %d frames (gradient, repeated)...\n", n);
+    rt_kprintf("JPEG benchmark: %d frames (pattern=%d, repeated)...\n", n, pat);
     uint32_t total_convert = 0, total_encode = 0, total_bytes = 0;
+    uint32_t total_tick_ms = 0;
+    uint32_t last_stripes = 0;
     uint32_t t0 = tick_ms();
     for (int i = 0; i < n; i++)
     {
@@ -287,14 +300,19 @@ static int cmd_udisp_jpeg_bench(int argc, char **argv)
         total_convert += js.last_convert_us;
         total_encode  += js.last_encode_us;
         total_bytes   += len;
+        total_tick_ms += js.last_tick_ms;
+        last_stripes   = js.last_stripe_cnt;
     }
     uint32_t dt = tick_ms() - t0;
 
     rt_kprintf("Total: %u ms, avg: %u ms/frame, ~%u fps\n",
                dt, (dt + n/2) / n,
                dt ? (n * 1000 / dt) : 0);
-    rt_kprintf("  avg convert   : %u us\n", total_convert / n);
-    rt_kprintf("  avg encode    : %u us\n", total_encode  / n);
+    rt_kprintf("  avg convert   : %u us (DWT)\n", total_convert / n);
+    rt_kprintf("  avg encode    : %u us (DWT full pipeline)\n", total_encode / n);
+    rt_kprintf("  avg tick_ms   : %u ms (cross-check)\n", total_tick_ms / n);
+    rt_kprintf("  stripes/frame : %u (should be %d)\n",
+               last_stripes, UDISP_JPEG_MCU_COUNT_Y);
     rt_kprintf("  avg jpeg size : %u bytes\n", total_bytes / n);
     return 0;
 }
