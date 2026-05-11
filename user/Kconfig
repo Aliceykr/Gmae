@@ -1,0 +1,20 @@
+menu "User Applications"
+
+    menuconfig USER_USB_DISPLAY
+        bool "Enable USB Display Bridge"
+        default y
+        help
+            Stream board framebuffer to PC via USB HS Bulk + hardware JPEG.
+            Phase 1: framebuffer + test patterns only.
+
+    if USER_USB_DISPLAY
+        config USER_USB_DISPLAY_WIDTH
+            int "Display width"
+            default 800
+
+        config USER_USB_DISPLAY_HEIGHT
+            int "Display height"
+            default 480
+    endif
+
+endmenu

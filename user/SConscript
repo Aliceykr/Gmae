@@ -1,0 +1,15 @@
+import os
+from building import *
+
+cwd = GetCurrentDir()
+
+src = Glob('src/*.c')
+
+CPPPATH = [
+    cwd,
+    cwd + '/inc',
+]
+
+group = DefineGroup('User', src, depend=[''], CPPPATH=CPPPATH)
+
+Return('group')

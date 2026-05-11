@@ -6,11 +6,13 @@
  * Change Logs:
  * Date           Author       Notes
  * 2020-09-02     RT-Thread    first version
+ * 2025-01-01     Kiro         integrate USB Display Bridge (Phase 1)
  */
 
 #include <rtthread.h>
 #include <rtdevice.h>
 #include "drv_common.h"
+#include "user_display.h"
 
 #define LED_PIN GET_PIN(O, 5)
 
@@ -19,6 +21,12 @@ int main(void)
     rt_uint32_t count = 1;
 
     rt_pin_mode(LED_PIN, PIN_MODE_OUTPUT);
+
+    /* 启动 USB 显示桥 (Phase 1: 仅帧缓冲). 失败不影响 main 流程 */
+    if (udisp_init() != 0)
+    {
+        rt_kprintf("[main] udisp_init failed, continue without display bridge\n");
+    }
 
     while(count++)
     {
