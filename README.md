@@ -5,7 +5,7 @@
 | 项目 | 规格 |
 |------|------|
 | 板卡 | ART-Pi2 |
-| MCU | STM32H7R7L8H6H (Cortex-M7, 600MHz max, 当前配置 480MHz) |
+| MCU | STM32H7R7L8H6H (Cortex-M7, 600MHz) |
 | 内部 SRAM | 456 KB AXI SRAM (0x24000000) |
 | 外部 PSRAM | 32 MB HSPI PSRAM (0x90000000, XSPI1 Hexa-SPI 16线) |
 | 外部 NOR Flash | 64 MB Winbond (0x70000000, XSPI2 Octo-SPI 8线, XIP执行) |
